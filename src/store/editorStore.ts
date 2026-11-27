@@ -54,7 +54,7 @@ interface EditorState {
   resetEditor: () => void;
 }
 
-export const useEditorStore = create<EditorState>((set, get) => ({
+export const useEditorStore = create<EditorState>((set) => ({
   // Initial tool settings
   toolSettings: {
     activeTool: 'select',

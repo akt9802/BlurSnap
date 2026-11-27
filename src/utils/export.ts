@@ -201,7 +201,6 @@ export async function exportImage(
         
         // Generate filename: originalname-edited.png (or -edited-1, -edited-2, etc if file exists)
         const baseName = fileName.replace(/\.[^/.]+$/, ''); // Remove extension
-        const timestamp = Date.now();
         link.download = `${baseName}-edited.png`;
         
         link.href = url;

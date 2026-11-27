@@ -59,7 +59,6 @@ export default function EditorCanvas({
     updateAnnotation,
     updateRedaction,
     updateHighlight,
-    selection, 
     setSelection,
     setIsEditingText
   } = useEditorStore();
@@ -133,7 +132,7 @@ export default function EditorCanvas({
         width: element.radius * 2,
         height: element.radius * 2,
       };
-    } else if (element.type === 'text') {
+    } else if ('type' in element && element.type === 'text') {
       const canvas = overlayCanvasRef.current;
       const ctx = canvas?.getContext('2d');
       let textWidth = Math.max(24, (element.text.length * element.fontSize) / 2);
@@ -152,7 +151,8 @@ export default function EditorCanvas({
     if (!bounds) return null;
 
     const handleSize = 8;
-    const outset = element.type === 'text' ? 10 : 0;
+    const isText = 'type' in element && element.type === 'text';
+    const outset = isText ? 10 : 0;
     const handles = {
       'top-left': { x: bounds.x - handleSize / 2 - outset, y: bounds.y - handleSize / 2 - outset, width: handleSize, height: handleSize },
       'top-right': { x: bounds.x + bounds.width - handleSize / 2 + outset, y: bounds.y - handleSize / 2 - outset, width: handleSize, height: handleSize },
@@ -160,7 +160,7 @@ export default function EditorCanvas({
       'bottom-left': { x: bounds.x - handleSize / 2 - outset, y: bounds.y + bounds.height - handleSize / 2 + outset, width: handleSize, height: handleSize },
     };
 
-    if (element.type === 'text') {
+    if (isText) {
       return { ...handles, bounds };
     }
 
@@ -236,7 +236,6 @@ export default function EditorCanvas({
         // Check if point is near any part of the path
         for (let j = 0; j < ann.points.length - 1; j++) {
           const p1 = ann.points[j];
-          const p2 = ann.points[j + 1];
           const dist = Math.sqrt(Math.pow(point.x - p1.x, 2) + Math.pow(point.y - p1.y, 2));
           if (dist <= 10) {
             return ann.id;
