@@ -3,6 +3,7 @@ import { X, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import EditorCanvas from './EditorCanvas';
 import Toolbar from '../toolbar/Toolbar';
 import PropertiesPanel from './PropertiesPanel';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 
 interface EditorProps {
   imageUrl: string;
@@ -19,11 +20,25 @@ export default function Editor({
   fileName,
   onClear,
 }: EditorProps) {
-  const [zoom, setZoom] = useState(1);
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts();
+  
+  // Calculate initial zoom to fit screen (max 90% of viewport)
+  const calculateFitZoom = () => {
+    const maxWidth = window.innerWidth * 0.6; // 60% of viewport width
+    const maxHeight = window.innerHeight * 0.7; // 70% of viewport height
+    
+    const scaleX = maxWidth / imageWidth;
+    const scaleY = maxHeight / imageHeight;
+    
+    return Math.min(scaleX, scaleY, 1); // Don't zoom in beyond 100%
+  };
+
+  const [zoom, setZoom] = useState(() => calculateFitZoom());
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.25));
-  const handleResetZoom = () => setZoom(1);
+  const handleResetZoom = () => setZoom(calculateFitZoom());
 
   const handleExport = () => {
     // TODO: Implement export functionality

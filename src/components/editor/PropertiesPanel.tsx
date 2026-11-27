@@ -28,6 +28,7 @@ export default function PropertiesPanel() {
   const showStrokeWidth = ['pen', 'arrow', 'line', 'rectangle', 'circle'].includes(tool);
   const showHighlighterColors = tool === 'highlighter';
   const showOpacity = tool === 'highlighter';
+  const showTextSettings = tool === 'text';
 
   return (
     <div className="w-72 bg-white border-l border-gray-200 flex flex-col">
@@ -152,6 +153,34 @@ export default function PropertiesPanel() {
                 onChange={(e) => setOpacity(Number(e.target.value) / 100)}
                 className="flex-1"
               />
+            </div>
+          </div>
+        )}
+
+        {/* Text Settings */}
+        {showTextSettings && (
+          <div>
+            <h3 className="text-xs font-medium text-gray-500 uppercase mb-3">Font Size</h3>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => useEditorStore.setState((state) => ({
+                  toolSettings: { ...state.toolSettings, fontSize: Math.max(12, (state.toolSettings.fontSize || 24) - 2) }
+                }))}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <div className="flex-1 text-center font-medium">
+                {toolSettings.fontSize || 24}px
+              </div>
+              <button
+                onClick={() => useEditorStore.setState((state) => ({
+                  toolSettings: { ...state.toolSettings, fontSize: Math.min(72, (state.toolSettings.fontSize || 24) + 2) }
+                }))}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
           </div>
         )}

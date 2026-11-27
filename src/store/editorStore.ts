@@ -85,26 +85,70 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   highlights: [],
 
   addRedaction: (redaction) =>
-    set((state) => ({
-      redactions: [...state.redactions, redaction],
-    })),
+    set((state) => {
+      const newState = {
+        redactions: [...state.redactions, redaction],
+        history: {
+          past: [...state.history.past, {
+            redactions: state.redactions,
+            annotations: state.annotations,
+            highlights: state.highlights,
+          }],
+          future: [], // Clear future when new action is added
+        },
+      };
+      return newState;
+    }),
 
   addAnnotation: (annotation) =>
-    set((state) => ({
-      annotations: [...state.annotations, annotation],
-    })),
+    set((state) => {
+      const newState = {
+        annotations: [...state.annotations, annotation],
+        history: {
+          past: [...state.history.past, {
+            redactions: state.redactions,
+            annotations: state.annotations,
+            highlights: state.highlights,
+          }],
+          future: [],
+        },
+      };
+      return newState;
+    }),
 
   addHighlight: (highlight) =>
-    set((state) => ({
-      highlights: [...state.highlights, highlight],
-    })),
+    set((state) => {
+      const newState = {
+        highlights: [...state.highlights, highlight],
+        history: {
+          past: [...state.history.past, {
+            redactions: state.redactions,
+            annotations: state.annotations,
+            highlights: state.highlights,
+          }],
+          future: [],
+        },
+      };
+      return newState;
+    }),
 
   removeElement: (id) =>
-    set((state) => ({
-      redactions: state.redactions.filter((r) => r.id !== id),
-      annotations: state.annotations.filter((a) => a.id !== id),
-      highlights: state.highlights.filter((h) => h.id !== id),
-    })),
+    set((state) => {
+      const newState = {
+        redactions: state.redactions.filter((r) => r.id !== id),
+        annotations: state.annotations.filter((a) => a.id !== id),
+        highlights: state.highlights.filter((h) => h.id !== id),
+        history: {
+          past: [...state.history.past, {
+            redactions: state.redactions,
+            annotations: state.annotations,
+            highlights: state.highlights,
+          }],
+          future: [],
+        },
+      };
+      return newState;
+    }),
 
   // Selection
   selection: {
@@ -124,13 +168,55 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   undo: () => {
-    // TODO: Implement undo logic
-    console.log('Undo');
+    set((state) => {
+      if (state.history.past.length === 0) return state;
+
+      const previous = state.history.past[state.history.past.length - 1];
+      const newPast = state.history.past.slice(0, -1);
+
+      return {
+        redactions: previous.redactions,
+        annotations: previous.annotations,
+        highlights: previous.highlights,
+        history: {
+          past: newPast,
+          future: [
+            {
+              redactions: state.redactions,
+              annotations: state.annotations,
+              highlights: state.highlights,
+            },
+            ...state.history.future,
+          ],
+        },
+      };
+    });
   },
 
   redo: () => {
-    // TODO: Implement redo logic
-    console.log('Redo');
+    set((state) => {
+      if (state.history.future.length === 0) return state;
+
+      const next = state.history.future[0];
+      const newFuture = state.history.future.slice(1);
+
+      return {
+        redactions: next.redactions,
+        annotations: next.annotations,
+        highlights: next.highlights,
+        history: {
+          past: [
+            ...state.history.past,
+            {
+              redactions: state.redactions,
+              annotations: state.annotations,
+              highlights: state.highlights,
+            },
+          ],
+          future: newFuture,
+        },
+      };
+    });
   },
 
   // Zoom

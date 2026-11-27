@@ -38,8 +38,11 @@ const tools: Tool[] = [
 ];
 
 export default function Toolbar() {
-  const { toolSettings, setActiveTool, undo, redo } = useEditorStore();
+  const { toolSettings, setActiveTool, undo, redo, history } = useEditorStore();
   const activeTool = toolSettings.activeTool;
+  
+  const canUndo = history.past.length > 0;
+  const canRedo = history.future.length > 0;
 
   return (
     <div className="w-20 bg-white border-r border-gray-200 flex flex-col py-4">
@@ -83,15 +86,25 @@ export default function Toolbar() {
       <div className="border-t border-gray-200 pt-2 flex flex-col gap-1 px-2">
         <button
           onClick={undo}
-          className="h-12 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-          title="Undo (Ctrl+Z)"
+          disabled={!canUndo}
+          className={`h-12 rounded-lg flex items-center justify-center transition-colors ${
+            canUndo
+              ? 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              : 'text-gray-300 cursor-not-allowed'
+          }`}
+          title={`Undo (Ctrl+Z)${canUndo ? ` - ${history.past.length} action(s)` : ''}`}
         >
           <Undo2 className="w-5 h-5" />
         </button>
         <button
           onClick={redo}
-          className="h-12 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-          title="Redo (Ctrl+Shift+Z)"
+          disabled={!canRedo}
+          className={`h-12 rounded-lg flex items-center justify-center transition-colors ${
+            canRedo
+              ? 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              : 'text-gray-300 cursor-not-allowed'
+          }`}
+          title={`Redo (Ctrl+Shift+Z)${canRedo ? ` - ${history.future.length} action(s)` : ''}`}
         >
           <Redo2 className="w-5 h-5" />
         </button>
