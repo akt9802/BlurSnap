@@ -2,12 +2,24 @@ import { useEffect } from 'react';
 import { useEditorStore } from '../store/editorStore';
 
 export function useKeyboardShortcuts() {
-  const { setActiveTool, undo, redo, selection, removeElement } = useEditorStore();
+  const { setActiveTool, undo, redo, selection, removeElement, isEditingText } = useEditorStore();
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // Don't trigger if user is editing text
+      if (isEditingText) {
+        return;
+      }
+
       // Don't trigger if user is typing in an input
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      const target = e.target as HTMLElement;
+      if (
+        target instanceof HTMLInputElement || 
+        target instanceof HTMLTextAreaElement ||
+        target.isContentEditable ||
+        document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement
+      ) {
         return;
       }
 
@@ -70,5 +82,5 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [setActiveTool, undo, redo, selection, removeElement]);
+  }, [setActiveTool, undo, redo, selection, removeElement, isEditingText]);
 }

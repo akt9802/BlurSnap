@@ -11,6 +11,8 @@ import type {
 interface EditorState {
   // Tool state
   toolSettings: ToolSettings;
+  isEditingText: boolean;
+  setIsEditingText: (isEditing: boolean) => void;
   setActiveTool: (tool: ToolType) => void;
   setToolColor: (color: string) => void;
   setStrokeWidth: (width: number) => void;
@@ -26,6 +28,10 @@ interface EditorState {
   addHighlight: (highlight: Highlight) => void;
   
   removeElement: (id: string) => void;
+  
+  updateAnnotation: (id: string, updates: Partial<Annotation>) => void;
+  updateRedaction: (id: string, updates: Partial<Redaction>) => void;
+  updateHighlight: (id: string, updates: Partial<Highlight>) => void;
   
   // Selection
   selection: SelectionState;
@@ -43,6 +49,9 @@ interface EditorState {
   // Zoom
   zoom: number;
   setZoom: (zoom: number) => void;
+  
+  // Reset
+  resetEditor: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -58,6 +67,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     pixelSize: 10,
     filled: false,
   },
+
+  isEditingText: false,
+  setIsEditingText: (isEditing) => set({ isEditingText: isEditing }),
 
   setActiveTool: (tool) =>
     set((state) => ({
@@ -150,6 +162,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return newState;
     }),
 
+  // Update elements (for moving, resizing, etc.)
+  updateAnnotation: (id: string, updates: Partial<Annotation>) =>
+    set((state) => ({
+      annotations: state.annotations.map(a => a.id === id ? { ...a, ...updates } as Annotation : a),
+    })),
+
+  updateRedaction: (id: string, updates: Partial<Redaction>) =>
+    set((state) => ({
+      redactions: state.redactions.map(r => r.id === id ? { ...r, ...updates } : r),
+    })),
+
+  updateHighlight: (id: string, updates: Partial<Highlight>) =>
+    set((state) => ({
+      highlights: state.highlights.map(h => h.id === id ? { ...h, ...updates } : h),
+    })),
+
   // Selection
   selection: {
     selectedIds: [],
@@ -222,4 +250,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Zoom
   zoom: 1,
   setZoom: (zoom) => set({ zoom }),
+  
+  // Reset everything
+  resetEditor: () => set({
+    redactions: [],
+    annotations: [],
+    highlights: [],
+    selection: { selectedIds: [] },
+    history: { past: [], future: [] },
+  }),
 }));

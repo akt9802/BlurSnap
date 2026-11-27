@@ -3,7 +3,10 @@ import { X, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import EditorCanvas from './EditorCanvas';
 import Toolbar from '../toolbar/Toolbar';
 import PropertiesPanel from './PropertiesPanel';
+import Logo from '../common/Logo';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
+import { useEditorStore } from '../../store/editorStore';
+import { exportImage } from '../../utils/export';
 
 interface EditorProps {
   imageUrl: string;
@@ -23,6 +26,12 @@ export default function Editor({
   // Enable keyboard shortcuts
   useKeyboardShortcuts();
   
+  // Get active tool from store
+  const activeTool = useEditorStore(state => state.toolSettings.activeTool);
+  const redactions = useEditorStore(state => state.redactions);
+  const annotations = useEditorStore(state => state.annotations);
+  const highlights = useEditorStore(state => state.highlights);
+  
   // Calculate initial zoom to fit screen (max 90% of viewport)
   const calculateFitZoom = () => {
     const maxWidth = window.innerWidth * 0.6; // 60% of viewport width
@@ -35,14 +44,30 @@ export default function Editor({
   };
 
   const [zoom, setZoom] = useState(() => calculateFitZoom());
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.25, 0.25));
   const handleResetZoom = () => setZoom(calculateFitZoom());
 
-  const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log('Export clicked');
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportImage(
+        imageUrl,
+        imageWidth,
+        imageHeight,
+        redactions,
+        annotations,
+        highlights,
+        fileName
+      );
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export image. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -50,9 +75,7 @@ export default function Editor({
       {/* Top Bar */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            BlurSnap
-          </h1>
+          <Logo size={28} showText={true} />
           <div className="h-6 w-px bg-gray-300" />
           <div className="text-sm">
             <p className="font-medium text-gray-900">{fileName}</p>
@@ -60,15 +83,22 @@ export default function Editor({
               {imageWidth} × {imageHeight} px
             </p>
           </div>
+          <div className="h-6 w-px bg-gray-300" />
+          <div className="px-3 py-1 bg-blue-50 rounded-full">
+            <p className="text-xs font-medium text-blue-700 capitalize">
+              Active: {activeTool.replace('-', ' ')}
+            </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
           <button
             onClick={handleExport}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+            disabled={isExporting}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center gap-2"
           >
             <Download className="w-4 h-4" />
-            Export
+            {isExporting ? 'Exporting...' : 'Export'}
           </button>
           <button
             onClick={onClear}

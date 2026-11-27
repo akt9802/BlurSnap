@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import { useCallback, useState, useEffect } from 'react';
+import { Upload, Clipboard } from 'lucide-react';
+import Logo from '../common/Logo';
 
 interface UploadScreenProps {
   onImageLoad: (file: File, url: string, width: number, height: number) => void;
@@ -11,6 +12,8 @@ const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 export default function UploadScreen({ onImageLoad }: UploadScreenProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPasteHint, setShowPasteHint] = useState(true);
+  const [pasteSuccess, setPasteSuccess] = useState(false);
 
   const validateAndLoadImage = useCallback((file: File) => {
     setError(null);
@@ -70,17 +73,46 @@ export default function UploadScreen({ onImageLoad }: UploadScreenProps) {
     }
   }, [validateAndLoadImage]);
 
+  // Handle clipboard paste
+  const handlePaste = useCallback((e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    // Find image in clipboard
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        
+        if (blob) {
+          // Show success feedback
+          setPasteSuccess(true);
+          setTimeout(() => setPasteSuccess(false), 2000);
+          
+          // Create a File object from blob
+          const file = new File([blob], 'pasted-image.png', { type: blob.type });
+          validateAndLoadImage(file);
+          setShowPasteHint(false);
+        }
+        break;
+      }
+    }
+  }, [validateAndLoadImage]);
+
+  // Add paste event listener
+  useEffect(() => {
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [handlePaste]);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-8">
       {/* Header */}
       <div className="text-center mb-12">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
-            <ImageIcon className="w-7 h-7 text-white" />
-          </div>
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-            BlurSnap
-          </h1>
+        <div className="flex items-center justify-center mb-4">
+          <Logo size={48} showText={true} />
         </div>
         <p className="text-gray-600 text-lg max-w-md mx-auto">
           Privacy-first screenshot editor. Blur, highlight, and annotate your images - all in your browser.
@@ -117,11 +149,18 @@ export default function UploadScreen({ onImageLoad }: UploadScreenProps) {
             {isDragging ? 'Drop your image here' : 'Upload an image'}
           </h2>
           
-          <p className="text-gray-500 mb-6">
+          <p className="text-gray-500 mb-2">
             Drag and drop or{' '}
             <span className="text-blue-600 font-medium">browse</span>
             {' '}to choose a file
           </p>
+
+          {showPasteHint && (
+            <div className="flex items-center justify-center gap-2 text-sm text-blue-600 mb-4">
+              <Clipboard className="w-4 h-4" />
+              <span>Or press <kbd className="px-2 py-1 bg-gray-100 rounded border border-gray-300 font-mono text-xs">Cmd/Ctrl + V</kbd> to paste</span>
+            </div>
+          )}
 
           <div className="flex items-center justify-center gap-6 text-sm text-gray-400">
             <span className="flex items-center gap-1">
@@ -148,6 +187,16 @@ export default function UploadScreen({ onImageLoad }: UploadScreenProps) {
           className="hidden"
         />
       </div>
+
+      {/* Success Message */}
+      {pasteSuccess && (
+        <div className="mt-6 max-w-2xl w-full">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+            <Clipboard className="w-5 h-5 text-green-600" />
+            <p className="text-green-800 text-sm font-medium">Image pasted successfully! ✨</p>
+          </div>
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
